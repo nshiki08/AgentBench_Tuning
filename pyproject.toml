@@ -1,0 +1,38 @@
+[project]
+name = "agentbench-tuning"
+version = "0.1.0"
+description = "AgentBench accuracy improvement - dataset creation and training"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+dependencies = [
+    "marimo>=0.10.0",
+    "nbformat>=5.10.0",
+    "torch>=2.0.0",
+    "transformers>=4.40.0",
+    "datasets>=3.0.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+    "pytest>=8.0.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.8.0",
+    "pytest>=8.0.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agentbench_tuning"]
