@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# uv
+uv.lock
+
+# Jupyter / Colab (exported ipynb are regenerated from marimo)
+.ipynb_checkpoints/
+*.ipynb
+
+# marimo auto-download snapshots
+__marimo__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables / secrets
+.env
+.env.local
+*.key
+credentials.json
+
+# Data (large files should not be committed)
+data/raw/
+data/processed/
+*.parquet
+*.arrow
+*.h5
+*.hdf5
+
+# Model checkpoints
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Logs
+logs/
+*.log
+wandb/
+mlruns/
