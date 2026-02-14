@@ -12,6 +12,8 @@ AgentBench_Tuning/
 │   └── Dockerfile
 ├── dataset/                # データセット作成
 │   └── notebooks/          # marimo notebooks (.py)
+├── docs/
+│   └── plans/              # 学習計画ドキュメント
 ├── training/               # モデル学習
 │   └── notebooks/          # marimo notebooks (.py)
 ├── scripts/
@@ -20,6 +22,11 @@ AgentBench_Tuning/
 ├── CLAUDE.md               # Claude Code向けガイドライン
 └── README.md
 ```
+
+## 学習計画
+
+- [RL中心計画 v1](docs/plans/rl_training_plan_v1.md) — 現行計画。SFTウォームスタート → GRPO強化学習
+- [包括的計画 v0](docs/plans/comprehensive_training_plan_v0.md) — 初期版。5フェーズ構成の全体設計
 
 ## 前提条件
 
