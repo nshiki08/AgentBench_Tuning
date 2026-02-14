@@ -21,9 +21,23 @@
 - `prepare_model_for_kbit_training()` before `get_peft_model()` for QLoRA
 - See [qwen-training.md](qwen-training.md) for hyperparameters
 
+## Qwen2.5-7B-Instruct DPO Notes
+- DPO notebook: `training/notebooks/02_dpo_qwen25_7b.py` (Plan C)
+- Input: JSONL with `prompt` (list[dict]), `chosen` (list[dict]), `rejected` (list[dict])
+- DPOTrainer handles chat template application internally when given message lists
+- `padding_side="left"` for tokenizer in DPO (generation consistency)
+- LoRA rank 32 (lower than SFT 64) for stability on preference learning
+- LR 5e-6 (lower than SFT 2e-5); beta=0.1 (KL penalty); 1 epoch per round
+- DPOTrainer + peft_config: ref model via adapter disable (no extra VRAM)
+- `AutoPeftModelForCausalLM` for loading SFT adapter -> `merge_and_unload()` -> fresh DPO LoRA
+- Fallback: load base model directly if no SFT adapter available
+- See [qwen-training.md](qwen-training.md) for full hyperparameter details
+
 ## Key Files
 - SFT notebook: `training/notebooks/01_sft_qwen25_7b.py`
+- DPO notebook: `training/notebooks/02_dpo_qwen25_7b.py`
 - Dataset creation: `dataset/notebooks/01_build_training_set_v1.py` (expected JSONL output)
+- DPO pairs: `dataset/output/dpo_pairs_v1.jsonl` (from `03_generate_dpo_pairs_v1.py`)
 - Export script: `scripts/export_to_ipynb.sh`
 
 ## Ruff Linting

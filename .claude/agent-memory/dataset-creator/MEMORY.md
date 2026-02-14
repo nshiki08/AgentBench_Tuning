@@ -23,19 +23,41 @@
 - Target: ~6,000 samples, agent:general = 1:2
 - JSONL output with companion metadata.json
 
+## DPO Pairs Schema (V1)
+- Output: `{"prompt": [...], "chosen": [...], "rejected": [...], "chosen_score": float, "rejected_score": float, "task_type": "db"|"env", "source": "..."}`
+- K=8 completions per prompt, temperature=0.8, top_p=0.95, max_new_tokens=1024
+- MIN_SCORE_DIFF=0.1 threshold for pair selection
+- DB reward: SQL execution match (exact=1.0, partial=Jaccard*0.5, format-only=0.3/-0.3, error=-0.5)
+- Env reward: ReAct format (0.4) + action validity (0.3) + reasoning quality (0.3)
+- Notebook: `dataset/notebooks/03_generate_dpo_pairs_v1.py`
+
+## RL Prompts Dataset (Plan C: Offline DPO)
+- `dataset/notebooks/02_build_rl_prompts_v1.py` -- Prompt-only dataset for GRPO/DPO
+- Output: `dataset/output/rl_prompts_v1.jsonl` + `rl_prompts_v1_metadata.json`
+- Schema: `{prompt: [{role,content}...], task_type, source, gold_sql, db_path}`
+- DB prompts (500-800): Spider/SParC/CoSQL -- system+user only, gold_sql + db_path for reward
+- Env prompts (300-500): ETO (WebShop/ScienceWorld) + 40 synthetic templates with parameterization
+
 ## Contamination Prevention
 - BANNED keywords: alfworld, alf_world, textworld, text_world, tw_, tw-
 - Triple-layer check: per-row filter, _make_chatml check, final_contamination_check
 - ETO dataset (`agent-eto/eto-sft-trajectory`) contains ALFWorld -- must filter
 
-## HuggingFace Dataset Candidates
-- SParC: `aherntech/sparc` (fallback: `xlangai/sparc`)
-- CoSQL: `aherntech/cosql`, `xlangai/cosql`, `parkervg/cosql`
-- Spider: `xlangai/spider`
-- Synthetic SQL: `gretelai/synthetic_text_to_sql`
-- ETO trajectories: `agent-eto/eto-sft-trajectory`
-- General chat: `OpenAssistant/oasst2`, `lmsys/chatbot_arena_conversations` (fallback: `lmsys/lmsys-chat-1m`)
-
 ## Key Files
-- `dataset/notebooks/01_build_training_set_v1.py` -- Main dataset builder notebook
+- `dataset/notebooks/01_build_training_set_v1.py` -- Main dataset builder notebook (SFT)
+- `dataset/notebooks/02_build_rl_prompts_v1.py` -- RL prompt dataset builder (DPO/GRPO)
+- `dataset/notebooks/03_generate_dpo_pairs_v1.py` -- DPO pair generation notebook
+- `training/notebooks/01_sft_qwen25_7b.py` -- SFT training notebook (QLoRA, Qwen2.5-7B)
 - `pyproject.toml` -- ruff config: line-length=120, target-version=py312
+
+## Ruff Lint Notes
+- Selected rules: E, F, I, N, W, UP
+- Per-file-ignores for notebooks: N803, N806 are ignored
+- Watch for F841 (unused variables) -- e.g. loop variables, batch_end assigned but not used
+- Avoid duplicate local variable definitions within same function scope
+- Colab detection pattern uses `# noqa: F401` for the google.colab import check
+
+## Model Loading Pattern (for generation notebooks)
+- Use `padding_side="left"` for batched generation (vs "right" for training)
+- Sub-batch generation (4 at a time) for memory efficiency with K=8 completions
+- Graceful fallback when SFT adapter not found (use base model only, log warning)
