@@ -66,11 +66,9 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 # Set environment variables
 ENV DEVCONTAINER=true
 
-# Create workspace and config directories
-RUN mkdir -p /workspace /home/$USERNAME/.claude \
-    && chown -R $USERNAME:$USERNAME /workspace /home/$USERNAME/.claude
-
-WORKDIR /workspace
+# Create config directory
+RUN mkdir -p /home/$USERNAME/.claude \
+    && chown -R $USERNAME:$USERNAME /home/$USERNAME/.claude
 
 # Switch to non-root user
 USER $USERNAME
