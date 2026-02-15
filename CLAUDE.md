@@ -65,6 +65,7 @@ marimo notebookは `.py` ファイルとして保存される（Gitフレンド�
 - **ソース管理**: marimo `.py` ファイルが正（`.ipynb` は `.gitignore` に含まれる）
 - **変換時の制約**: `mo.ui.*` 等のmarimo固有UIはColab上では動作しない。データ処理・学習ロジックに集中すること
 - **PEP 723**: 各ノートブックの先頭に `# /// script` ブロックで依存関係をインラインで記述する
+- **コンテキスト整理**: 1タスク完了ごとに不要なコンテキストを `/compact` で整理すること
 
 ## サブエージェント
 
@@ -98,13 +99,22 @@ llm-ecosystem-engineer   →  環境・依存問題を随時解決
 - [RL中心計画 v1](docs/plans/rl_training_plan_v1.md) — 現行計画。報酬関数・ハイパーパラメータ・VRAM見積もり等
 - [包括的計画 v0](docs/plans/comprehensive_training_plan_v0.md) — 初期版。5フェーズ構成のサーベイ・データ収集・SFT・RL全体設計
 
+### 学習対象モデル
+
+以下の2つを「学習対象モデル」と呼ぶ。これらのAgentBenchスコア向上が最終目標。
+
+| モデル | HuggingFace ID |
+|--------|----------------|
+| **Qwen2.5-7B** | `Qwen/Qwen2.5-7B-Instruct` |
+| **Qwen3-4B** | `Qwen/Qwen3-4B-Instruct-2507` |
+
 ### 合成データ・蒸留に使用可能なモデル（ホワイトリスト）
 
-以下のモデルのみ、合成データ生成・蒸留に使用可能。
+以下のモデルのみ、合成データ生成・蒸留に使用可能（学習対象モデルも含む）。
 
 | カテゴリ | モデル |
 |---------|--------|
-| **学習対象** | `Qwen/Qwen2.5-7B-Instruct`, `Qwen/Qwen3-4B-Instruct-2507` |
+| **学習対象モデル** | `Qwen/Qwen2.5-7B-Instruct`, `Qwen/Qwen3-4B-Instruct-2507` |
 | **GPT-OSS 120B** | `openai/gpt-oss-120b`, `unsloth/gpt-oss-120b-GGUF`, `unsloth/gpt-oss-120b-unsloth-bnb-4bit` |
 | **Qwen2.5-72B** | `Qwen/Qwen2.5-72B-Instruct`, `-AWQ`, `-GGUF`, `-GPTQ-Int4`, `-GPTQ-Int8` |
 | **Nemotron-3-Nano-30B** | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16`, `-NVFP4`, `-FP8`, `unsloth/...-GGUF` |
@@ -114,11 +124,6 @@ llm-ecosystem-engineer   →  環境・依存問題を随時解決
 | **GLM-4.7-Flash** | `zai-org/GLM-4.7-Flash`, `unsloth/GLM-4.7-Flash-GGUF`, `-FP8-Dynamic` |
 | **Qwen3-32B** | `Qwen/Qwen3-32B`, `-FP8`, `-AWQ`, `-GGUF`, `unsloth/...-unsloth-bnb-4bit` |
 | **Qwen3-14B** | `Qwen/Qwen3-14B`, `-FP8`, `-AWQ`, `-GGUF`, `unsloth/...-unsloth-bnb-4bit` |
-
-### 対象モデル・ベンチマーク
-
-- **モデル**: Qwen2.5-7B-Instruct / Qwen3-4B-Instruct-2507
-- **評価**: AgentBench（DB Bench, ALFWorld）— 評価のみに使用
 
 ### 方針: RL中心アプローチ
 
@@ -145,15 +150,30 @@ SFTデータ (6K件)  →  SFT 1 epoch  →  GRPOプロンプト (800-1,300件) 
 ### ノートブック一覧
 
 ```
-dataset/notebooks/
-├── 01_build_training_set_v1.py       # SFTデータセット（実装済み）
-└── 02_build_rl_prompts_v1.py         # GRPOプロンプトデータ
+dataset/
+├── notebooks/
+│   ├── 01_build_training_set_v1.ipynb   # SFTデータセット
+│   ├── 02_build_rl_prompts_v1.ipynb     # GRPOプロンプトデータ
+│   └── 03_generate_dpo_pairs_v1.ipynb   # DPOペア生成（シングルターン・レガシー）
+└── dpo/
+    ├── 01_generate_db_trajectories.ipynb   # DBマルチターンDPO軌道生成
+    ├── 02_generate_env_trajectories.ipynb  # Envマルチターン DPO軌道生成
+    └── output/                              # 生成データ出力先
 
 training/notebooks/
-├── 01_sft_qwen25_7b.py               # SFTウォームスタート（実装済み）
-├── 02_grpo_qwen25_7b.py              # GRPO学習 7B
-└── 03_grpo_qwen3_4b.py               # GRPO学習 4B
+├── 01_sft_qwen25_7b.ipynb               # SFTウォームスタート
+├── 02_dpo_qwen25_7b.ipynb               # DPO学習 7B
+├── 02_grpo_qwen25_7b.py                 # GRPO学習 7B（未実装）
+└── 03_grpo_qwen3_4b.py                  # GRPO学習 4B（未実装）
 ```
+
+### DPO軌道生成で使用するモデル
+
+| 役割 | モデル | 用途 |
+|------|--------|------|
+| Agent（chosen） | GPT-OSS-120B | 高品質な成功軌道を生成（最強ホワイトリストモデル） |
+| Agent（rejected） | Qwen2.5-7B-Instruct | 学習対象モデルの失敗パターン |
+| Environment Simulator | GPT-OSS-120B | 環境応答の一貫性を保証 |
 
 ### 参考文献
 
